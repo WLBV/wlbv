@@ -78,7 +78,7 @@ export class CryptoAlgorithm {
         if(typeof account === "object" ){
             var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 );
             console.log(symbolsToBuy);
-            if(account.estimatedValue > 100 && symbolsToBuy.length > 0){
+            if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
                     
@@ -93,7 +93,7 @@ export class CryptoAlgorithm {
 
                         if(this.isPriceRising(price, lastFiverecords)){
 
-                            var amountToBuy = 50 / price.price;
+                            var amountToBuy = process.env.BUY_AMOUNT / price.price;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
                             console.log("BUY: " + s.name + " " + amountToBuy + " " + price.price);
 
@@ -138,7 +138,7 @@ export class CryptoAlgorithm {
         if(priceDiff > 0 ){
             return false;
         }else{
-            var percent = (Math.abs(priceDiff) * 100) / buyPrice;
+            var percent = (Math.abs(priceDiff) * process.env.BUY_AMOUNT) / buyPrice;
             const isLimitReached = percent > failPercentageLimit;
             return isLimitReached;
         }
@@ -151,7 +151,7 @@ export class CryptoAlgorithm {
         if(priceDiff < 0 ){
             return false;
         }else{
-            var percent = (priceDiff * 100) / buyPrice;
+            var percent = (priceDiff * process.env.BUY_AMOUNT) / buyPrice;
 
 
             const isLimitReached = percent >= highPercentageLimit;
