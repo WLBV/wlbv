@@ -105,7 +105,7 @@ export class CryptoAlgorithm {
     }
 
     isPriceRising(currentPrice, lastPrice){
-        return currentPrice.price >= lastPrice;
+        return currentPrice >= lastPrice;
     }
 
     isLowLimit(currentPrice, buyPrice){
