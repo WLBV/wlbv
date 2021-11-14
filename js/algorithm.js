@@ -9,6 +9,7 @@ var apiKey = process.env.API_KEY;
 var api = new Api(apiKey);
 var binanceApi = new BinanceApi(process.env.BAPI_KEY)
 
+
 export class CryptoAlgorithm {
     async runOnce() {
 
@@ -38,20 +39,24 @@ export class CryptoAlgorithm {
 
                         if(typeof sHystory === "object"){
 
-                            var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY")
-                            var priceDiff = price.price - lastOrder.price;
+                            var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY");
+
+                            const currentPrice = this.toFixedNumber(price.price, s.name);
+                            const lastOrderPrice = this.toFixedNumber(lastOrder.price, s.name);
+
+                            var priceDiff = currentPrice - lastOrderPrice;
                    
                             var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
 
                             if(
-                                (priceDiff < 0 && this.isLowLimit(price.price, lastOrder.price))
+                                (priceDiff < 0 && this.isLowLimit(currentPrice, lastOrderPrice))
                                 ||
-                                (priceDiff > 0 && this.isHighLimit(price.price, lastOrder.price))
+                                (priceDiff > 0 && this.isHighLimit(currentPrice, lastOrderPrice))
                             
                             ){
                                 
                                 await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
-                                console.log("SELL: " + s.name + " " + s.quantity + " " + price.price + " =" +  priceDiff * s.quantity);
+                                console.log("SELL: " + s.name + " " + s.quantity + " " + currentPrice + " =" +  priceDiff * s.quantity);
                             }
                         }
                     }
@@ -81,16 +86,16 @@ export class CryptoAlgorithm {
                     const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
 
                     var price = sHystory.reverse()[0];
+
+                    const currentPrice = this.toFixedNumber(price.price, s.name);
+                    const lastPrice = this.toFixedNumber(historyArray[0].price, s.name);
                     
                     if(typeof sHystory === "object" ){
                     
-                        var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
-
-                        if(this.isPriceRising(price, lastFiverecords)){
-
-                            var amountToBuy = process.env.BUY_AMOUNT / price.price;
+                        if(this.isPriceRising(currentPrice, lastPrice)){
+                            var amountToBuy = process.env.BUY_AMOUNT / currentPrice;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
-                            console.log("BUY: " + s.name + " " + amountToBuy + " " + price.price);
+                            console.log("BUY: " + s.name + " " + amountToBuy + " " + currentPrice);
 
                         }
                     }
@@ -104,19 +109,7 @@ export class CryptoAlgorithm {
     }
 
     isPriceRising(currentPrice, historyArray){
-        return currentPrice.price >= historyArray[0].price; // Close price
-    }
-
-    isPriceFailing(currentPrice, historyArray){
-        var contor = 0;
-        for(const h of historyArray){
-            if(currentPrice.price < h.price){
-                contor++;
-            }else{
-                contor--;
-            }
-        }
-        return contor > 0;
+        return this.toFixedNumber(currentPrice.price) >= this.toFixedNumber(historyArray[0].price); // Close price
     }
 
     isLowLimit(currentPrice, buyPrice){
@@ -155,6 +148,24 @@ export class CryptoAlgorithm {
         });
     } 
 
+    toFixedNumber(num, symbol){
+        const symbolPrecision = [
+            {symbol: "BTC", p:2},
+            {symbol: "ETH", p:2},
+            {symbol: "DOGE", p:4},
+            {symbol: "ADA", p:3},
+            {symbol: "LTC", p:1},
+            {symbol: "MATIC", p:3},
+            {symbol: "BNB", p:1},
+            {symbol: "EGLD", p:2},
+            {symbol: "NEO", p:2},
+            {symbol: "SOL", p:2},
+            {symbol: "XRP", p:4},
+        ];
+        const prec = symbolPrecision.find(s => s.symbol === symbol).p;
+        var pow = Math.pow(10, prec);
+        return Math.round(num*pow) / pow;
+    }
 
 
 }
