@@ -66,9 +66,9 @@ export class CryptoAlgorithm {
         }
             
 
-        // console.log("Before Midle sleep");
-        // await this.sleep(process.env.SLEEP);
-        // console.log("After Midle sleep");
+        console.log("Before Midle sleep");
+        await this.sleep(process.env.SLEEP);
+        console.log("After Midle sleep");
 
         var account = await api.account();
         console.log(account);
