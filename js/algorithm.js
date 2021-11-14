@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { Api } from "./api.js";
 import { BinanceApi } from "./binanceApi.js";
+import ccxt from 'ccxt'
 
 
 var apiKey = process.env.API_KEY;
@@ -10,6 +11,12 @@ var binanceApi = new BinanceApi(process.env.BAPI_KEY)
 
 export class CryptoAlgorithm {
     async runOnce() {
+
+        const binanceClient = new ccxt.binance({
+            apiKey: process.env.BAPI_KEY
+        });
+
+        const bPrice = await binanceClient.fetchTrades( "BTCUSDT", undefined, 10, undefined);
 
 
         var account = await api.account();
@@ -24,37 +31,33 @@ export class CryptoAlgorithm {
                 var orderHistory = await api.orderHistory();
                 for(const s of symbolsToSell){
                     if(typeof orderHistory === "object"){
-                        var price = await api.price({symbol: s.name});
+                     
+
+                        const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
+
+                        var price = sHystory.reverse()[0];
                         console.log(price);
 
-                  
 
-                        var sHystory = await api.symbolHistory({
-                            symbol: s.name,
-                            interval: "1m"
-                        })    
-                        if(typeof sHystory === "object" && typeof price === "object"){
+                        if(typeof sHystory === "object"){
 
                             var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY")
-                            var priceDiff = price.value - lastOrder.price;
+                            var priceDiff = price.price - lastOrder.price;
                             console.log(s.name +": "+ priceDiff);
                             var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
 
                             if(
-                                priceDiff < 0 && this.isLowLimit(price.value, lastOrder.price)
+                                (priceDiff < 0 && this.isLowLimit(price.price, lastOrder.price))
                                 ||
-                                priceDiff > 0 && this.isHighLimit(price.value, lastOrder.price)
+                                (priceDiff > 0 && this.isHighLimit(price.price, lastOrder.price))
                             
                             ){
                                 
                                 await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
-                                console.log("SELL: " + s.name + " " + s.quantity + " " + price.value + " =" +  priceDiff * s.quantity);
+                                console.log("SELL: " + s.name + " " + s.quantity + " " + price.price + " =" +  priceDiff * s.quantity);
                             }
                         }
                     }
-                    console.log("Before sell sleep");
-                    await this.sleep(20000);
-                    console.log("After sell sleep");
 
                 }
 
@@ -64,7 +67,7 @@ export class CryptoAlgorithm {
             
 
         console.log("Before Midle sleep");
-        await this.sleep(20000);
+        await this.sleep(process.env.SLEEP);
         console.log("After Midle sleep");
 
         var account = await api.account();
@@ -78,30 +81,24 @@ export class CryptoAlgorithm {
             if(account.estimatedValue > 100 && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
-                    var sHystory = await api.symbolHistory({
-                        symbol: s.name,
-                        interval: "1m"
-                    });
+                    
+                    const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
 
-                    var price = await api.price({symbol: s.name});
+                    var price = sHystory.reverse()[0];
                     console.log(price);
                     
-                    if(typeof sHystory === "object" && typeof price === "object"){
+                    if(typeof sHystory === "object" ){
                     
                         var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
 
                         if(this.isPriceRising(price, lastFiverecords)){
 
-                            var amountToBuy = 50 / price.value;
+                            var amountToBuy = 50 / price.price;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
-                            console.log("BUY: " + s.name + " " + amountToBuy + " " + price.value);
+                            console.log("BUY: " + s.name + " " + amountToBuy + " " + price.price);
 
                         }
                     }
-
-                    console.log("Before Buy sleep");
-                    await this.sleep(20000);
-                    console.log("After Buy sleep");
 
                 }
 
@@ -112,20 +109,20 @@ export class CryptoAlgorithm {
     }
 
     isPriceRising(currentPrice, historyArray){
-        console.log(currentPrice.name);
-        console.log(currentPrice.value);
-        console.log(historyArray[0][4]);
+        console.log(currentPrice.symbol);
+        console.log(currentPrice.price);
+        console.log(historyArray[0].price);
 
-        console.log(currentPrice.value >= historyArray[0][4]);
+        console.log(currentPrice.price >= historyArray[0].price);
 
-        return currentPrice.value >= historyArray[0][4]; // Close price
+        return currentPrice.price >= historyArray[0].price; // Close price
 
     }
 
     isPriceFailing(currentPrice, historyArray){
         var contor = 0;
         for(const h of historyArray){
-            if(currentPrice.value < h[4]){
+            if(currentPrice.price < h.price){
                 contor++;
             }else{
                 contor--;
@@ -134,21 +131,21 @@ export class CryptoAlgorithm {
         return contor > 0;
     }
 
-    async isLowLimit(currentPrice, buyPrice){
-        var failPercentageLimit = 0.1;
+    isLowLimit(currentPrice, buyPrice){
+        var failPercentageLimit = process.env.LOW;
         var priceDiff = currentPrice - buyPrice;
 
         if(priceDiff > 0 ){
             return false;
         }else{
             var percent = (Math.abs(priceDiff) * 100) / buyPrice;
-
-            return percent > failPercentageLimit
+            const isLimitReached = percent > failPercentageLimit;
+            return isLimitReached;
         }
     }
 
-    async isHighLimit(currentPrice, buyPrice){
-        var highPercentageLimit = 0.5;
+    isHighLimit(currentPrice, buyPrice){
+        var highPercentageLimit = process.env.HIGH;
         var priceDiff = currentPrice - buyPrice;
 
         if(priceDiff < 0 ){
@@ -156,12 +153,12 @@ export class CryptoAlgorithm {
         }else{
             var percent = (priceDiff * 100) / buyPrice;
 
-            return percent >= highPercentageLimit
+
+            const isLimitReached = percent >= highPercentageLimit;
+
+            return isLimitReached;
         }
     }
-
-
-
 
 
     sleep(ms) {
