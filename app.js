@@ -10,14 +10,15 @@ let runIntervalInMS = process.env.RUN_INTERVAL
 
 let cryptoAlgorithm = new CryptoAlgorithm();
 
-//cryptoAlgorithm.runOnce()
+
+cryptoAlgorithm.runOnce()
 
 function runAlgorithm(){
     let cryptoAlgorithm = new CryptoAlgorithm();
     cryptoAlgorithm.runOnce();
 }
 
-setInterval(runAlgorithm, runIntervalInMS);
+//setInterval(runAlgorithm, runIntervalInMS);
 
 
 
