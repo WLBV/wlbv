@@ -26,24 +26,21 @@ export class CryptoAlgorithm {
         if(typeof account === "object" ){
 
             var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT");
-            console.log(symbolsToSell);
+
             if(symbolsToSell.length > 0){
                 var orderHistory = await api.orderHistory();
                 for(const s of symbolsToSell){
                     if(typeof orderHistory === "object"){
-                     
-
+                    
                         const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
-
                         var price = sHystory.reverse()[0];
-                        console.log(price);
 
 
                         if(typeof sHystory === "object"){
 
                             var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY")
                             var priceDiff = price.price - lastOrder.price;
-                            console.log(s.name +": "+ priceDiff);
+                   
                             var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
 
                             if(
@@ -77,7 +74,6 @@ export class CryptoAlgorithm {
 
         if(typeof account === "object" ){
             var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 );
-            console.log(symbolsToBuy);
             if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
@@ -85,7 +81,6 @@ export class CryptoAlgorithm {
                     const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
 
                     var price = sHystory.reverse()[0];
-                    console.log(price);
                     
                     if(typeof sHystory === "object" ){
                     
@@ -109,14 +104,7 @@ export class CryptoAlgorithm {
     }
 
     isPriceRising(currentPrice, historyArray){
-        console.log(currentPrice.symbol);
-        console.log(currentPrice.price);
-        console.log(historyArray[0].price);
-
-        console.log(currentPrice.price >= historyArray[0].price);
-
         return currentPrice.price >= historyArray[0].price; // Close price
-
     }
 
     isPriceFailing(currentPrice, historyArray){
