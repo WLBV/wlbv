@@ -46,8 +46,6 @@ export class CryptoAlgorithm {
 
                             var priceDiff = currentPrice - lastOrderPrice;
                    
-                            var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
-
                             if(
                                 (priceDiff < 0 && this.isLowLimit(currentPrice, lastOrderPrice))
                                 ||
@@ -68,9 +66,9 @@ export class CryptoAlgorithm {
         }
             
 
-        console.log("Before Midle sleep");
-        await this.sleep(process.env.SLEEP);
-        console.log("After Midle sleep");
+        // console.log("Before Midle sleep");
+        // await this.sleep(process.env.SLEEP);
+        // console.log("After Midle sleep");
 
         var account = await api.account();
         console.log(account);
@@ -85,10 +83,8 @@ export class CryptoAlgorithm {
                     
                     const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
 
-                    var price = sHystory.reverse()[0];
-
-                    const currentPrice = this.toFixedNumber(price.price, s.name);
-                    const lastPrice = this.toFixedNumber(historyArray[0].price, s.name);
+                    const currentPrice = this.toFixedNumber(sHystory.reverse()[0].price, s.name);
+                    const lastPrice = this.toFixedNumber(sHystory.reverse()[1].price, s.name);
                     
                     if(typeof sHystory === "object" ){
                     
@@ -108,8 +104,8 @@ export class CryptoAlgorithm {
         
     }
 
-    isPriceRising(currentPrice, historyArray){
-        return this.toFixedNumber(currentPrice.price) >= this.toFixedNumber(historyArray[0].price); // Close price
+    isPriceRising(currentPrice, lastPrice){
+        return currentPrice.price >= lastPrice;
     }
 
     isLowLimit(currentPrice, buyPrice){
