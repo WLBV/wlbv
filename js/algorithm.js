@@ -21,6 +21,7 @@ export class CryptoAlgorithm {
 
             if(symbolsToSell.length > 0){
                 var orderHistory = await api.orderHistory();
+                orderHistory.reverse();
                 for(const s of symbolsToSell){
                     if(typeof orderHistory === "object"){
 
@@ -35,7 +36,7 @@ export class CryptoAlgorithm {
 
                         if(typeof sHystory === "object"){
 
-                            var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY");
+                            var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
 
                             const currentPrice = price.value;
                             const lastOrderPrice = lastOrder.price;
@@ -141,6 +142,7 @@ export class CryptoAlgorithm {
             return false;
         }else{
             var percent = (priceDiff * process.env.BUY_AMOUNT) / buyPrice;
+
             console.log("currentPrice:" + currentPrice + " buyPrice: " + buyPrice);
             console.log("envPercent:" + highPercentageLimit + " currentPercent: " + percent);
 
