@@ -125,6 +125,7 @@ export class CryptoAlgorithm {
             return false;
         }else{
             var percent = (Math.abs(priceDiff) * process.env.BUY_AMOUNT) / buyPrice;
+            console.log("currentPrice:" + currentPrice + " buyPrice: " + buyPrice);
             console.log("envPercent:" + failPercentageLimit + " currentPercent: " + percent);
             const isLimitReached = percent > failPercentageLimit;
             return isLimitReached;
@@ -140,6 +141,7 @@ export class CryptoAlgorithm {
             return false;
         }else{
             var percent = (priceDiff * process.env.BUY_AMOUNT) / buyPrice;
+            console.log("currentPrice:" + currentPrice + " buyPrice: " + buyPrice);
             console.log("envPercent:" + highPercentageLimit + " currentPercent: " + percent);
 
             const isLimitReached = percent >= highPercentageLimit;
