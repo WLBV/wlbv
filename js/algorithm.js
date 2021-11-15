@@ -90,15 +90,15 @@ export class CryptoAlgorithm {
                     
                     if(typeof sHystory === "object" && typeof price === "object" ){
 
-                        var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
+                        var lastRecords = sHystory.slice(Math.max(sHystory.length - 10, 1));
 
                         const currentPrice = price.value;
-                        const lastPrice = lastFiverecords.reverse()[0][4];
+                        //const lastPrice = lastFiverecords.reverse()[0][4];
                     
-                        if(this.isPriceRising(currentPrice, lastPrice)){
+                        if(this.isPriceRising(currentPrice, lastRecords)){
                             var amountToBuy = process.env.BUY_AMOUNT;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
-                            console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice + " LastPrice:" + lastPrice);
+                            console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice);
 
                         }
                     }
@@ -111,10 +111,15 @@ export class CryptoAlgorithm {
         
     }
 
-    isPriceRising(currentPrice, lastPrice){
+    isPriceRising(currentPrice, lastRecords){
         console.log("isPriceRising");
-        console.log("currentPrice:" + currentPrice + " lastPrice: " + lastPrice);
-        return currentPrice >= lastPrice;
+        var diff = currentPrice - lastRecords[0][4];
+        console.log("currentPrice:" + currentPrice + " lastRecord: " + lastRecords[0][4] + " Rise: " + diff);
+        if(diff > 0){
+            return true
+        }else{
+            return false
+        }
     }
 
     isLowLimit(currentPrice, buyPrice){
