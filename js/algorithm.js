@@ -111,17 +111,21 @@ export class CryptoAlgorithm {
     }
 
     isPriceRising(currentPrice, lastPrice){
+        console.log("isPriceRising");
+        console.log("currentPrice:" + currentPrice + " lastPrice: " + lastPrice);
         return currentPrice >= lastPrice;
     }
 
     isLowLimit(currentPrice, buyPrice){
         var failPercentageLimit = process.env.LOW;
         var priceDiff = currentPrice - buyPrice;
+        console.log("isLowLimit");
 
         if(priceDiff > 0 ){
             return false;
         }else{
             var percent = (Math.abs(priceDiff) * process.env.BUY_AMOUNT) / buyPrice;
+            console.log("envPercent:" + failPercentageLimit + " currentPercent: " + percent);
             const isLimitReached = percent > failPercentageLimit;
             return isLimitReached;
         }
@@ -130,12 +134,13 @@ export class CryptoAlgorithm {
     isHighLimit(currentPrice, buyPrice){
         var highPercentageLimit = process.env.HIGH;
         var priceDiff = currentPrice - buyPrice;
-
+        console.log("isHighLimit");
+     
         if(priceDiff < 0 ){
             return false;
         }else{
             var percent = (priceDiff * process.env.BUY_AMOUNT) / buyPrice;
-
+            console.log("envPercent:" + highPercentageLimit + " currentPercent: " + percent);
 
             const isLimitReached = percent >= highPercentageLimit;
 
