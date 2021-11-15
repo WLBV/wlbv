@@ -90,10 +90,9 @@ export class CryptoAlgorithm {
                     
                     if(typeof sHystory === "object" && typeof price === "object" ){
 
-                        var lastRecords = sHystory.slice(Math.max(sHystory.length - 10, 1));
+                        var lastRecords = sHystory.slice(Math.max(sHystory.length - process.env.HISTORY_DEPTH, 1));
 
                         const currentPrice = price.value;
-                        //const lastPrice = lastFiverecords.reverse()[0][4];
                     
                         if(this.isPriceRising(currentPrice, lastRecords)){
                             var amountToBuy = process.env.BUY_AMOUNT;
