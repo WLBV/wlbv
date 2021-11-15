@@ -7,7 +7,7 @@ export class Api {
     constructor(key) {
         stefaniniClient = axios.create(
             {
-                baseURL: 'https://crypto-bot-stefanini.herokuapp.com/api',
+                baseURL: 'https://crypto-bot-challenge-api.herokuapp.com/api',
                 timeout: 5000,
             }
         ) ;

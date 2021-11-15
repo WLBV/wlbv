@@ -7,18 +7,11 @@ import ccxt from 'ccxt'
 
 var apiKey = process.env.API_KEY;
 var api = new Api(apiKey);
-var binanceApi = new BinanceApi(process.env.BAPI_KEY)
+//var binanceApi = new BinanceApi(process.env.BAPI_KEY)
 
 
 export class CryptoAlgorithm {
     async runOnce() {
-
-        const binanceClient = new ccxt.binance({
-            apiKey: process.env.BAPI_KEY
-        });
-
-        const bPrice = await binanceClient.fetchTrades( "BTCUSDT", undefined, 10, undefined);
-
 
         var account = await api.account();
         console.log(account);
@@ -32,16 +25,21 @@ export class CryptoAlgorithm {
                 var orderHistory = await api.orderHistory();
                 for(const s of symbolsToSell){
                     if(typeof orderHistory === "object"){
-                    
-                        const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
-                        var price = sHystory.reverse()[0];
+
+                        var price = await api.price({symbol: s.name});
+                        console.log(price);
+
+                        var sHystory = await api.symbolHistory({
+                            symbol: s.name,
+                            interval: "1m"
+                        });    
 
 
                         if(typeof sHystory === "object"){
 
                             var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY");
 
-                            const currentPrice = this.toFixedNumber(price.price, s.name);
+                            const currentPrice = this.toFixedNumber(price.value, s.name);
                             const lastOrderPrice = this.toFixedNumber(lastOrder.price, s.name);
 
                             var priceDiff = currentPrice - lastOrderPrice;
@@ -80,13 +78,23 @@ export class CryptoAlgorithm {
             if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
-                    
-                    const sHystory = await binanceClient.fetchTrades( s.name + "USDT", undefined, 10, undefined);
 
-                    const currentPrice = this.toFixedNumber(sHystory.reverse()[0].price, s.name);
-                    const lastPrice = this.toFixedNumber(sHystory.reverse()[1].price, s.name);
+                    var sHystory = await api.symbolHistory({
+                        symbol: s.name,
+                        interval: "1m"
+                    });
+
+                    var price = await api.price({symbol: s.name});
+                    console.log(price);
+
+                   
                     
-                    if(typeof sHystory === "object" ){
+                    if(typeof sHystory === "object" && typeof price === "object" ){
+
+                        var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
+
+                        const currentPrice = this.toFixedNumber(price.value, s.name);
+                        const lastPrice = this.toFixedNumber(lastFiverecords.reverse()[0][4], s.name);
                     
                         if(this.isPriceRising(currentPrice, lastPrice)){
                             var amountToBuy = process.env.BUY_AMOUNT / currentPrice;
