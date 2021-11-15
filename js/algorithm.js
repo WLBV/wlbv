@@ -68,12 +68,13 @@ export class CryptoAlgorithm {
         console.log("After Midle sleep");
 
         var account = await api.account();
-        console.log(account);
+        //console.log(account);
 
   
 
         if(typeof account === "object" ){
             var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 && symbolsList.find(sl => sl === p.name));
+            console.log(symbolsToBuy);
             if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
