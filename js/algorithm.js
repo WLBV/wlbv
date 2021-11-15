@@ -7,19 +7,17 @@ import ccxt from 'ccxt'
 
 var apiKey = process.env.API_KEY;
 var api = new Api(apiKey);
-//var binanceApi = new BinanceApi(process.env.BAPI_KEY)
-
 
 export class CryptoAlgorithm {
     async runOnce() {
 
         var account = await api.account();
         console.log(account);
-
+        const symbolsList = process.env.SYMBOLS.split(',');
 
         if(typeof account === "object" ){
 
-            var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT");
+            var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT" );
 
             if(symbolsToSell.length > 0){
                 var orderHistory = await api.orderHistory();
@@ -39,8 +37,8 @@ export class CryptoAlgorithm {
 
                             var lastOrder = orderHistory.reverse().find(o => o.symbol === s.name && o.side === "BUY");
 
-                            const currentPrice = this.toFixedNumber(price.value, s.name);
-                            const lastOrderPrice = this.toFixedNumber(lastOrder.price, s.name);
+                            const currentPrice = price.value;
+                            const lastOrderPrice = lastOrder.price;
 
                             var priceDiff = currentPrice - lastOrderPrice;
                    
@@ -52,7 +50,7 @@ export class CryptoAlgorithm {
                             ){
                                 
                                 await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
-                                console.log("SELL: " + s.name + " " + s.quantity + " " + currentPrice + " =" +  priceDiff * s.quantity);
+                                console.log("SELL: " + s.name + " Qty:" + s.quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * s.quantity);
                             }
                         }
                     }
@@ -74,7 +72,7 @@ export class CryptoAlgorithm {
   
 
         if(typeof account === "object" ){
-            var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 );
+            var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 && symbolsList.find(sl => sl === p.name));
             if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
                 for(const s of symbolsToBuy){
@@ -93,13 +91,13 @@ export class CryptoAlgorithm {
 
                         var lastFiverecords = sHystory.slice(Math.max(sHystory.length - 5, 1));
 
-                        const currentPrice = this.toFixedNumber(price.value, s.name);
-                        const lastPrice = this.toFixedNumber(lastFiverecords.reverse()[0][4], s.name);
+                        const currentPrice = price.value;
+                        const lastPrice = lastFiverecords.reverse()[0][4];
                     
                         if(this.isPriceRising(currentPrice, lastPrice)){
                             var amountToBuy = process.env.BUY_AMOUNT / currentPrice;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
-                            console.log("BUY: " + s.name + " " + amountToBuy + " " + currentPrice);
+                            console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice + " LastPrice:" + lastPrice);
 
                         }
                     }
