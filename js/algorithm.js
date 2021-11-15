@@ -96,7 +96,7 @@ export class CryptoAlgorithm {
                         const lastPrice = lastFiverecords.reverse()[0][4];
                     
                         if(this.isPriceRising(currentPrice, lastPrice)){
-                            var amountToBuy = process.env.BUY_AMOUNT / currentPrice;
+                            var amountToBuy = process.env.BUY_AMOUNT;
                             await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
                             console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice + " LastPrice:" + lastPrice);
 
