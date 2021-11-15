@@ -12,13 +12,13 @@ export class CryptoAlgorithm {
     async runOnce() {
 
         var account = await api.account();
-        console.log(account);
+        //console.log(account);
         const symbolsList = process.env.SYMBOLS.split(',');
-
+      
         if(typeof account === "object" ){
 
             var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT" );
-
+            console.log(symbolsToSell);
             if(symbolsToSell.length > 0){
                 var orderHistory = await api.orderHistory();
                 orderHistory.reverse();
