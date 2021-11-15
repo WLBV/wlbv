@@ -113,8 +113,10 @@ export class CryptoAlgorithm {
     isPriceRising(currentPrice, lastRecords){
         console.log("isPriceRising");
         var diff = currentPrice - lastRecords[0][4];
-        console.log("currentPrice:" + currentPrice + " lastRecord: " + lastRecords[0][4] + " Rise: " + diff);
-        if(diff > 0){
+        var lastDiff = currentPrice - lastRecords[process.env.HISTORY_DEPTH - 1][4];
+
+        console.log("currentPrice:" + currentPrice + " lastRecord: " + lastRecords[0][4] + " Rise: " + diff + " lastDiff: " + lastDiff);
+        if(diff > 0 && lastDiff > 0){
             return true
         }else{
             return false
