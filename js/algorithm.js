@@ -2,14 +2,28 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { Api } from "./api.js";
 import { BinanceApi } from "./binanceApi.js";
-import ccxt from 'ccxt'
+import ccxt from 'ccxt';
+import redis from 'redis';
+import asincRedis from 'async-redis';
 
 
 var apiKey = process.env.API_KEY;
 var api = new Api(apiKey);
 
+
+const originalRedisClient = redis.createClient({url: process.env.REDIS_TLS_URL});
+const redisClient = asincRedis.decorate(originalRedisClient);
+
 export class CryptoAlgorithm {
     async runOnce() {
+
+   
+        redisClient.on('error', function (err) {
+            console.log('Could not establish a connection with redis. ' + err);
+        });
+        redisClient.on('connect', function (err) {
+            console.log('Connected to redis successfully');
+        });
 
         var account = await api.account();
         //console.log(account);
@@ -21,9 +35,10 @@ export class CryptoAlgorithm {
             console.log(symbolsToSell);
             if(symbolsToSell.length > 0){
                 var orderHistory = await api.orderHistory();
-                orderHistory.reverse();
-                for(const s of symbolsToSell){
-                    if(typeof orderHistory === "object"){
+
+                if(typeof orderHistory === "object"){
+                    orderHistory.reverse();
+                    for(const s of symbolsToSell){
 
                         var price = await api.price({symbol: s.name});
                         console.log(price);
@@ -38,24 +53,32 @@ export class CryptoAlgorithm {
 
                             var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
 
+                            console.log("before pop");
+                            var redisOrdersList = await redisClient.lrange(lastOrder.symbol, 0, -1);
+                            if(redisOrdersList.length == 0){
+                                await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
+                                console.log("Redis <= " + lastOrder);
+                            }
+                            console.log("after pop");
+
                             const currentPrice = price.value;
                             const lastOrderPrice = lastOrder.price;
 
                             var priceDiff = currentPrice - lastOrderPrice;
-                   
+                    
                             if(
                                 (priceDiff < 0 && this.isLowLimit(currentPrice, lastOrderPrice))
                                 ||
                                 (priceDiff > 0 && this.isHighLimit(currentPrice, lastOrderPrice))
                             
                             ){
-                                
                                 await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
                                 console.log("SELL: " + s.name + " Qty:" + s.quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * s.quantity);
                             }
                         }
-                    }
+                        
 
+                    }
                 }
 
 
@@ -184,6 +207,7 @@ export class CryptoAlgorithm {
         var pow = Math.pow(10, prec);
         return Math.round(num*pow) / pow;
     }
+  
 
 
 }
