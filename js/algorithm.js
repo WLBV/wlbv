@@ -13,7 +13,8 @@ var api = new Api(apiKey);
 
 const originalRedisClient = redis.createClient({url: process.env.REDIS_TLS_URL}, {
     tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        requestCert: true
     }
 });
 const redisClient = asincRedis.decorate(originalRedisClient);
