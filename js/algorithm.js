@@ -22,7 +22,7 @@ const redisClient = asincRedis.decorate(originalRedisClient);
 export class CryptoAlgorithm {
     async runOnce() {
 
-   
+        var a = process.env;
         redisClient.on('error', function (err) {
             console.log('Could not establish a connection with redis. ' + err);
         });
