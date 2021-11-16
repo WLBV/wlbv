@@ -4,12 +4,9 @@ import dotenv from 'dotenv'
 dotenv.config()
 import { CryptoAlgorithm } from './js/algorithm.js'
 
-
-
 let runIntervalInMS = process.env.RUN_INTERVAL
 
 let cryptoAlgorithm = new CryptoAlgorithm();
-
 
 cryptoAlgorithm.runOnce();
 
