@@ -11,7 +11,11 @@ var apiKey = process.env.API_KEY;
 var api = new Api(apiKey);
 
 
-const originalRedisClient = redis.createClient({url: process.env.REDIS_TLS_URL});
+const originalRedisClient = redis.createClient({url: process.env.REDIS_TLS_URL}, {
+    tls: {
+        rejectUnauthorized: false
+    }
+});
 const redisClient = asincRedis.decorate(originalRedisClient);
 
 export class CryptoAlgorithm {
