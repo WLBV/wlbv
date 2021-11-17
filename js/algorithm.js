@@ -130,9 +130,9 @@ export class CryptoAlgorithm {
                         const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
 
                         if(
-                            (s.quantity == 0 && this.isPriceRising(currentPrice, lastRecords))
+                            (s.quantity == 0 && await this.isPriceRising(currentPrice, lastRecords))
                             ||
-                            (s.quantity > 0 && this.buyOnPriceFail(currentPrice, redisOrdersString) && this.isPriceRising(currentPrice, lastRecords))
+                            (s.quantity > 0 && await this.buyOnPriceFail(currentPrice, redisOrdersString) && await this.isPriceRising(currentPrice, lastRecords))
                         ){
                             var amountToBuy = process.env.BUY_AMOUNT;
                             //var response = {order: 'success'}
@@ -174,7 +174,7 @@ export class CryptoAlgorithm {
         
     }
 
-    isPriceRising(currentPrice, lastRecords){
+    async isPriceRising(currentPrice, lastRecords){
         console.log("isPriceRising");
         var diff = currentPrice - lastRecords[0][4];
         var lastDiff = currentPrice - lastRecords[process.env.HISTORY_DEPTH - 1][4];
