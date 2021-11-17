@@ -131,7 +131,7 @@ export class CryptoAlgorithm {
                     
                         if((s.quantity == 0 && this.isPriceRising(currentPrice, lastRecords))
                             ||
-                            s.quantity > 0 && this.buyOnPriceFail(currentPrice, redisOrdersString)
+                            (s.quantity > 0 && this.buyOnPriceFail(currentPrice, redisOrdersString) && this.isPriceRising(currentPrice, lastRecords))
                             
                         ){
                             var amountToBuy = process.env.BUY_AMOUNT;
@@ -141,7 +141,9 @@ export class CryptoAlgorithm {
                             console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice);
                             if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
                                 var orderHistory = await api.orderHistory();
+
                                 if(Array.isArray(orderHistory)){
+                                    orderHistory.reverse();
                                     var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
                                     await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
                                     console.log("Redis PUSH " + JSON.stringify(lastOrder));
@@ -149,6 +151,7 @@ export class CryptoAlgorithm {
                                 while(Array.isArray(orderHistory) == false){
                                     orderHistory = await api.orderHistory();
                                     if(Array.isArray(orderHistory) ){
+                                        orderHistory.reverse();
                                         var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
                                         await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
                                         console.log("Redis PUSH " + JSON.stringify(lastOrder));
