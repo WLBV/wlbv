@@ -196,8 +196,13 @@ export class CryptoAlgorithm {
         var priceDiff = currentPrice - lastRedisOrder.price;
         var percent = (Math.abs(priceDiff) * 100 ) / lastRedisOrder.price;
         if(percent >= process.env.BUY_ON_FAIL_PERCENT){
+
             console.log("buyOnPriceFail: " + lastRedisOrder.symbol);
-            return true;
+            console.log("currentPrice: " + currentPrice);
+            console.log("Last order: " + JSON.stringify(lastRedisOrder));
+            console.log("percent: " + percent);
+            //return true;
+            return false;
         }
         return false;
     }
