@@ -72,9 +72,9 @@ export class CryptoAlgorithm {
                             var priceDiff = currentPrice - lastOrderPrice;
                     
                             if(
-                                (priceDiff < 0 && this.isLowLimit(currentPrice, lastOrderPrice))
+                                (priceDiff < 0 && await this.isLowLimit(currentPrice, lastOrderPrice))
                                 ||
-                                (priceDiff > 0 && this.isHighLimit(currentPrice, lastOrderPrice))
+                                (priceDiff > 0 && await this.isHighLimit(currentPrice, lastOrderPrice))
                             
                             ){
                                 var response = await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
@@ -207,7 +207,7 @@ export class CryptoAlgorithm {
         return false;
     }
 
-    isLowLimit(currentPrice, buyPrice){
+    async isLowLimit(currentPrice, buyPrice){
         var failPercentageLimit = process.env.LOW;
         var priceDiff = currentPrice - buyPrice;
         console.log("isLowLimit");
@@ -223,7 +223,7 @@ export class CryptoAlgorithm {
         }
     }
 
-    isHighLimit(currentPrice, buyPrice){
+    async isHighLimit(currentPrice, buyPrice){
         var highPercentageLimit = process.env.HIGH;
         var priceDiff = currentPrice - buyPrice;
         console.log("isHighLimit");
@@ -243,7 +243,7 @@ export class CryptoAlgorithm {
     }
 
 
-    sleep(ms) {
+    async sleep(ms) {
         return new Promise((resolve) => {
             setTimeout(resolve, ms);
         });
