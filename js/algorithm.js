@@ -34,7 +34,7 @@ export class CryptoAlgorithm {
         //console.log(account);
         const symbolsList = process.env.SYMBOLS.split(',');
       
-        if( typeof account === "object" ){
+        if( false &&  typeof account === "object" ){
 
             var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT" );
             console.log(symbolsToSell);
@@ -96,7 +96,7 @@ export class CryptoAlgorithm {
             
 
         console.log("Before Midle sleep");
-        await this.sleep(process.env.SLEEP);
+      //  await this.sleep(process.env.SLEEP);
         console.log("After Midle sleep");
 
         var account = await api.account();
@@ -135,8 +135,8 @@ export class CryptoAlgorithm {
                             (s.quantity > 0 && this.buyOnPriceFail(currentPrice, redisOrdersString) && this.isPriceRising(currentPrice, lastRecords))
                         ){
                             var amountToBuy = process.env.BUY_AMOUNT;
-                            //var response = {order: 'success'}
-                            var response = await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
+                            var response = {order: 'success'}
+                            //var response = await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
                             
                             console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice);
                             if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
@@ -181,6 +181,7 @@ export class CryptoAlgorithm {
 
         console.log("currentPrice:" + currentPrice + " lastRecord: " + lastRecords[0][4] + " Rise: " + diff + " lastDiff: " + lastDiff);
         if(diff > 0 && lastDiff > 0){
+            console.log('isPriceRising: TRUE');
             return true
         }else{
             return false
@@ -200,6 +201,7 @@ export class CryptoAlgorithm {
         console.log("currentPrice: " + currentPrice);
         console.log("Last order: " + JSON.stringify(lastRedisOrder));
         if(lastRedisOrder.price > currentPrice && percent >= process.env.BUY_ON_FAIL_PERCENT){
+            console.log('buyOnPriceFail: TRUE');
             return true;
         }
         return false;
