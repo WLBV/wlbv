@@ -65,14 +65,15 @@ export class CryptoAlgorithm {
                             //     console.log("Redis <= " + lastOrder);
                             // }
 
+                            const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
+                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
 
                             const currentPrice = price.value;
-                            const lastOrderPrice = lastOrder.price;
+                            const lastOrderPrice = lastRedisOrder.price;
 
                             var priceDiff = currentPrice - lastOrderPrice;
 
-                            const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
-                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
+                        
                     
                             if(
                                 (priceDiff < 0 && await this.isLowLimit(currentPrice, lastOrderPrice))
