@@ -34,7 +34,7 @@ export class CryptoAlgorithm {
         //console.log(account);
         const symbolsList = process.env.SYMBOLS.split(',');
       
-        if(typeof account === "object" ){
+        if( typeof account === "object" ){
 
             var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT" );
             console.log(symbolsToSell);
@@ -54,17 +54,17 @@ export class CryptoAlgorithm {
                         });    
 
 
-                        if(typeof sHystory === "object"){
+                        if(typeof sHystory === "object" && typeof price === "object"){
 
                             var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
 
-                            console.log("before pop");
-                            var redisOrdersList = await redisClient.lrange(lastOrder.symbol, 0, -1);
-                            if(redisOrdersList.length == 0){
-                                await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
-                                console.log("Redis <= " + lastOrder);
-                            }
-                            console.log("after pop");
+
+                            // var redisOrdersList = await redisClient.lrange(lastOrder.symbol, 0, -1);
+                            // if(redisOrdersList.length == 0){
+                            //     await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
+                            //     console.log("Redis <= " + lastOrder);
+                            // }
+
 
                             const currentPrice = price.value;
                             const lastOrderPrice = lastOrder.price;
@@ -77,8 +77,12 @@ export class CryptoAlgorithm {
                                 (priceDiff > 0 && this.isHighLimit(currentPrice, lastOrderPrice))
                             
                             ){
-                                await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
+                                var response = await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
                                 console.log("SELL: " + s.name + " Qty:" + s.quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * s.quantity);
+                                if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
+                                    var removedOrder = await redisClient.lpop(lastOrder.symbol);
+                                    console.log("Redis POP: " + JSON.stringify(removedOrder));
+                                }
                             }
                         }
                         
@@ -101,7 +105,7 @@ export class CryptoAlgorithm {
   
 
         if(typeof account === "object" ){
-            var symbolsToBuy = account.symbols.filter(p => p.quantity == 0 && symbolsList.find(sl => sl === p.name));
+            var symbolsToBuy = account.symbols.filter(p => p.name != "USDT" && symbolsList.find(sl => sl === p.name));
             console.log(symbolsToBuy);
             if(account.estimatedValue > process.env.BUY_AMOUNT && symbolsToBuy.length > 0){
 
@@ -122,11 +126,39 @@ export class CryptoAlgorithm {
                         var lastRecords = sHystory.slice(Math.max(sHystory.length - process.env.HISTORY_DEPTH, 1));
 
                         const currentPrice = price.value;
+
+                        const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
                     
-                        if(this.isPriceRising(currentPrice, lastRecords)){
+                        if((s.quantity == 0 && this.isPriceRising(currentPrice, lastRecords))
+                            ||
+                            s.quantity > 0 && this.buyOnPriceFail(currentPrice, redisOrdersString)
+                            
+                        ){
                             var amountToBuy = process.env.BUY_AMOUNT;
-                            await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
+                            //var response = {order: 'success'}
+                            var response = await api.order({ symbol: s.name, side: 'BUY', quantity: amountToBuy });
+                            
                             console.log("BUY: " + s.name + " ammount:" + amountToBuy + " CurrentPrice:" + currentPrice);
+                            if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
+                                var orderHistory = await api.orderHistory();
+                                if(Array.isArray(orderHistory)){
+                                    var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
+                                    await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
+                                    console.log("Redis PUSH " + JSON.stringify(lastOrder));
+                                }
+                                while(Array.isArray(orderHistory) == false){
+                                    orderHistory = await api.orderHistory();
+                                    if(Array.isArray(orderHistory) ){
+                                        var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
+                                        await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
+                                        console.log("Redis PUSH " + JSON.stringify(lastOrder));
+                                    }else{
+                                        await this.sleep(10000);
+                                        console.log("Sleep after error");
+                                    }
+                                }
+                                
+                            }
 
                         }
                     }
@@ -150,6 +182,21 @@ export class CryptoAlgorithm {
         }else{
             return false
         }
+    }
+
+    async buyOnPriceFail(currentPrice, redisOrdersString){
+        if(redisOrdersString.length == 0){
+            console.log("Redis is empty!!!!!!!!");
+            return false;
+        }
+        var lastRedisOrder = JSON.parse(redisOrdersString[0]);
+        var priceDiff = currentPrice - lastRedisOrder.price;
+        var percent = (Math.abs(priceDiff) * 100 ) / lastRedisOrder.price;
+        if(percent >= process.env.BUY_ON_FAIL_PERCENT){
+            console.log("buyOnPriceFail: " + lastRedisOrder.symbol);
+            return true;
+        }
+        return false;
     }
 
     isLowLimit(currentPrice, buyPrice){
