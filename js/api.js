@@ -64,7 +64,7 @@ export class Api {
           .get(`${path}`, data)
           .then((response) => response)
           .catch((error) => {
-                console.log(error.response);
+                console.log(error.response.statusText);
                 return Promise.resolve({data: "Error! Check the browser's console!"});
             });
     }
@@ -74,7 +74,7 @@ export class Api {
           .post(`${path}`, data)
           .then((response) => response)
           .catch((error) => {
-                console.log(error.response);
+                console.log(error.response.statusText);
                 return Promise.resolve({data: "Error! Check the browser's console!"});
             });
     }
