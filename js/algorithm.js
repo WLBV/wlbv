@@ -70,6 +70,9 @@ export class CryptoAlgorithm {
                             const lastOrderPrice = lastOrder.price;
 
                             var priceDiff = currentPrice - lastOrderPrice;
+
+                            const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
+                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
                     
                             if(
                                 (priceDiff < 0 && await this.isLowLimit(currentPrice, lastOrderPrice))
@@ -77,8 +80,8 @@ export class CryptoAlgorithm {
                                 (priceDiff > 0 && await this.isHighLimit(currentPrice, lastOrderPrice))
                             
                             ){
-                                var response = await api.order({ symbol: s.name, side: 'SELL', quantity: s.quantity });
-                                console.log("SELL: " + s.name + " Qty:" + s.quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * s.quantity);
+                                var response = await api.order({ symbol: s.name, side: 'SELL', quantity: lastRedisOrder.converted_quantity });
+                                console.log("SELL: " + s.name + " Qty:" + lastRedisOrder.converted_quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * lastRedisOrder.converted_quantity );
                                 if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
                                     var removedOrder = await redisClient.lpop(lastOrder.symbol);
                                     console.log("Redis POP: " + JSON.stringify(removedOrder));
