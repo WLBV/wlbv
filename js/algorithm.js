@@ -128,7 +128,7 @@ export class CryptoAlgorithm {
                         const currentPrice = price.value;
 
                         const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
-                        
+
                         if(
                             (s.quantity == 0 && this.isPriceRising(currentPrice, lastRecords))
                             ||
@@ -197,10 +197,9 @@ export class CryptoAlgorithm {
         var percent = (Math.abs(priceDiff) * 100 ) / lastRedisOrder.price;
         console.log("buyOnPriceFail: " + lastRedisOrder.symbol);
         console.log("percent: " + percent);
+        console.log("currentPrice: " + currentPrice);
+        console.log("Last order: " + JSON.stringify(lastRedisOrder));
         if(lastRedisOrder.price > currentPrice && percent >= process.env.BUY_ON_FAIL_PERCENT){
-            console.log("currentPrice: " + currentPrice);
-            console.log("Last order: " + JSON.stringify(lastRedisOrder));
-        
             return true;
         }
         return false;
