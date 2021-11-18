@@ -39,61 +39,43 @@ export class CryptoAlgorithm {
             var symbolsToSell = account.symbols.filter(p => p.quantity > 0 && p.name != "USDT" );
             console.log(symbolsToSell);
             if(symbolsToSell.length > 0){
-                var orderHistory = await api.orderHistory();
+    
+                for(const s of symbolsToSell){
 
-                if(typeof orderHistory === "object"){
-                    orderHistory.reverse();
-                    for(const s of symbolsToSell){
+                    var price = await api.price({symbol: s.name});
+                   
 
-                        var price = await api.price({symbol: s.name});
-                        console.log(price);
+                    var sHystory = await api.symbolHistory({
+                        symbol: s.name,
+                        interval: "1m"
+                    });    
 
-                        var sHystory = await api.symbolHistory({
-                            symbol: s.name,
-                            interval: "1m"
-                        });    
+                    if(typeof sHystory === "object" && typeof price === "object"){
 
+                        const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
+                        var lastRedisOrder = JSON.parse(redisOrdersString[0]);
 
-                        if(typeof sHystory === "object" && typeof price === "object"){
+                        const currentPrice = price.value;
+                        const lastOrderPrice = lastRedisOrder.price;
 
-                            var lastOrder = orderHistory.find(o => o.symbol === s.name && o.side === "BUY");
-
-
-                            // var redisOrdersList = await redisClient.lrange(lastOrder.symbol, 0, -1);
-                            // if(redisOrdersList.length == 0){
-                            //     await redisClient.lpush(lastOrder.symbol, JSON.stringify(lastOrder));
-                            //     console.log("Redis <= " + lastOrder);
-                            // }
-
-                            const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
-                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
-
-                            const currentPrice = price.value;
-                            const lastOrderPrice = lastRedisOrder.price;
-
-                            var priceDiff = currentPrice - lastOrderPrice;
-
+                        var priceDiff = currentPrice - lastOrderPrice;
+                
+                        if(
+                            (priceDiff < 0 && await this.isLowLimit(currentPrice, lastOrderPrice, price))
+                            ||
+                            (priceDiff > 0 && await this.isHighLimit(currentPrice, lastOrderPrice, sHystory, price))
                         
-                    
-                            if(
-                                (priceDiff < 0 && await this.isLowLimit(currentPrice, lastOrderPrice))
-                                ||
-                                (priceDiff > 0 && await this.isHighLimit(currentPrice, lastOrderPrice))
-                            
-                            ){
-                                var response = await api.order({ symbol: s.name, side: 'SELL', quantity: lastRedisOrder.converted_quantity });
-                                console.log("SELL: " + s.name + " Qty:" + lastRedisOrder.converted_quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * lastRedisOrder.converted_quantity );
-                                if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
-                                    var removedOrder = await redisClient.lpop(lastOrder.symbol);
-                                    console.log("Redis POP: " + JSON.stringify(removedOrder));
-                                }
+                        ){
+                            var response = await api.order({ symbol: s.name, side: 'SELL', quantity: lastRedisOrder.converted_quantity });
+                            console.log("SELL: " + s.name + " Qty:" + lastRedisOrder.converted_quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * lastRedisOrder.converted_quantity );
+                            if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
+                                var removedOrder = await redisClient.lpop(s.name);
+                                console.log("Redis POP: " + JSON.stringify(removedOrder));
                             }
                         }
-                        
-
                     }
+                    
                 }
-
 
             }
         }
@@ -211,7 +193,8 @@ export class CryptoAlgorithm {
         return false;
     }
 
-    async isLowLimit(currentPrice, buyPrice){
+    async isLowLimit(currentPrice, buyPrice, price){
+        console.log(price);
         var failPercentageLimit = process.env.LOW;
         var priceDiff = currentPrice - buyPrice;
         console.log("isLowLimit");
@@ -227,7 +210,10 @@ export class CryptoAlgorithm {
         }
     }
 
-    async isHighLimit(currentPrice, buyPrice){
+    async isHighLimit(currentPrice, buyPrice, symbolPriceHistory, price){
+        console.log(price);
+        const lastSymbolPrices = symbolPriceHistory.slice(Math.max(symbolPriceHistory.length - process.env.FAIL_HISTORY_DEPTH, 1));
+        var failingDiff = currentPrice - lastSymbolPrices[process.env.FAIL_HISTORY_DEPTH - 1][4];
         var highPercentageLimit = process.env.HIGH;
         var priceDiff = currentPrice - buyPrice;
         console.log("isHighLimit");
@@ -238,11 +224,12 @@ export class CryptoAlgorithm {
             var percent = (priceDiff * 100) / buyPrice;
 
             console.log("currentPrice:" + currentPrice + " buyPrice: " + buyPrice);
-            console.log("envPercent:" + highPercentageLimit + " currentPercent: " + percent);
+            console.log("envPercent:" + highPercentageLimit + " currentPercent: " + percent + " failingDiff: " + failingDiff);
 
             const isLimitReached = percent >= highPercentageLimit;
+            const isPriceFalling = failingDiff < 0
 
-            return isLimitReached;
+            return isLimitReached && isPriceFalling;
         }
     }
 
