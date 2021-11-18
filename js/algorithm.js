@@ -118,7 +118,7 @@ export class CryptoAlgorithm {
                         if(
                             (s.quantity == 0 && await this.isPriceRising(currentPrice, lastRecords))
                             ||
-                            (s.quantity > 0 && await this.buyOnPriceFail(currentPrice, redisOrdersString) && await this.isPriceRising(currentPrice, lastRecords))
+                            (s.quantity > 0 && await this.buyOnPriceFail(currentPrice, redisOrdersString, sHystory))
                         ){
                             var amountToBuy = process.env.BUY_AMOUNT;
                             //var response = {order: 'success'}
@@ -174,19 +174,21 @@ export class CryptoAlgorithm {
         }
     }
 
-    async buyOnPriceFail(currentPrice, redisOrdersString){
+    async buyOnPriceFail(currentPrice, redisOrdersString, price){
         if(redisOrdersString.length == 0){
             console.log("Redis is empty!!!!!!!!");
             return false;
         }
+        const lastSymbolPrices = price.slice(Math.max(price.length - process.env.RISE_HISTORY_DEPTH, 1));
         var lastRedisOrder = JSON.parse(redisOrdersString[0]);
         var priceDiff = currentPrice - lastRedisOrder.price;
         var percent = (Math.abs(priceDiff) * 100 ) / lastRedisOrder.price;
+        var lastDiff = currentPrice - lastSymbolPrices[process.env.RISE_HISTORY_DEPTH - 1][4]; // Check if price start to increase after BUY_ON_FAIL_PERCENT fail
         console.log("buyOnPriceFail: " + lastRedisOrder.symbol);
         console.log("percent: " + percent);
         console.log("currentPrice: " + currentPrice);
-        console.log("Last order: " + JSON.stringify(lastRedisOrder));
-        if(lastRedisOrder.price > currentPrice && percent >= process.env.BUY_ON_FAIL_PERCENT){
+        console.log("Last order: " + JSON.stringify(lastRedisOrder) + "isPriceRising: " + lastDiff);
+        if(lastRedisOrder.price > currentPrice && percent >= process.env.BUY_ON_FAIL_PERCENT && lastDiff > 0){
             console.log('buyOnPriceFail: TRUE');
             return true;
         }
