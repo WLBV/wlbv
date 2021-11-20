@@ -53,7 +53,7 @@ export class CryptoAlgorithm {
                     if(typeof sHystory === "object" && typeof price === "object"){
                         const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
 
-                        var sToSell = account.symbols.filter(p => p.name == s.name );
+                        var sToSell = account.symbols.find(p => p.name == s.name );
                         var lastRedisOrder = JSON.parse(redisOrdersString[0]);
                         var qtyToSell = lastRedisOrder.converted_quantity;
                       
