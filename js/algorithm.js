@@ -53,7 +53,17 @@ export class CryptoAlgorithm {
                     if(typeof sHystory === "object" && typeof price === "object"){
 
                         const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
-                        var lastRedisOrder = JSON.parse(redisOrdersString[0]);
+                       
+
+                        var sToSell = account.symbols.filter(p => p.name == s.name );
+                        var qtyToSell = sToSell.quantity;
+                        if(Array.isArray(redisOrdersString) && redisOrdersString.length > 0){
+                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
+                            var qtyToSell = lastRedisOrder.converted_quantity;
+                        }
+                        
+
+
 
                         const currentPrice = price.value;
                         const lastOrderPrice = lastRedisOrder.price;
@@ -66,8 +76,8 @@ export class CryptoAlgorithm {
                             (priceDiff > 0 && await this.isHighLimit(currentPrice, lastOrderPrice, sHystory, price))
                         
                         ){
-                            var response = await api.order({ symbol: s.name, side: 'SELL', quantity: lastRedisOrder.converted_quantity });
-                            console.log("SELL: " + s.name + " Qty:" + lastRedisOrder.converted_quantity + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * lastRedisOrder.converted_quantity );
+                            var response = await api.order({ symbol: s.name, side: 'SELL', quantity: qtyToSell });
+                            console.log("SELL: " + s.name + " Qty:" + qtyToSell + " CurrentPrice:" + currentPrice + " LastOrderPrice:" + lastOrderPrice + " Profit:" +  priceDiff * qtyToSell );
                             if(typeof response === "object" &&  typeof response.order !== 'undefined' && response.order == "success"){
                                 var removedOrder = await redisClient.lpop(s.name);
                                 console.log("Redis POP: " + JSON.stringify(removedOrder));
