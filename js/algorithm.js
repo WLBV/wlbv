@@ -51,20 +51,16 @@ export class CryptoAlgorithm {
                     });    
 
                     if(typeof sHystory === "object" && typeof price === "object"){
-
                         const redisOrdersString = await redisClient.lrange(s.name, 0, -1);
-                       
 
                         var sToSell = account.symbols.filter(p => p.name == s.name );
-                        var qtyToSell = sToSell.quantity;
-                        if(Array.isArray(redisOrdersString) && redisOrdersString.length > 0){
-                            var lastRedisOrder = JSON.parse(redisOrdersString[0]);
-                            var qtyToSell = lastRedisOrder.converted_quantity;
+                        var lastRedisOrder = JSON.parse(redisOrdersString[0]);
+                        var qtyToSell = lastRedisOrder.converted_quantity;
+                      
+                        if(redisOrdersString.length == 1){
+                            var qtyToSell = sToSell.quantity;
                         }
                         
-
-
-
                         const currentPrice = price.value;
                         const lastOrderPrice = lastRedisOrder.price;
 
