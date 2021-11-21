@@ -187,6 +187,7 @@ export class CryptoAlgorithm {
             return false;
         }else if(redisOrdersString.length > process.env.PRICE_FAIL_ORDERS_LIMIT){
             console.log("#######To many orders in queue :" + redisOrdersString.length + " #########");
+            return false;
         }
         const lastSymbolPrices = price.slice(Math.max(price.length - process.env.RISE_HISTORY_DEPTH, 1));
         var lastRedisOrder = JSON.parse(redisOrdersString[0]);
