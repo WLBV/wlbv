@@ -17,6 +17,7 @@ function runAlgorithm(){
     cryptoAlgorithm.runOnce();
 }
 
+
 setInterval(runAlgorithm, runIntervalInMS);
 
 
