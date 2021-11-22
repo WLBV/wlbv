@@ -170,7 +170,7 @@ export class CryptoAlgorithm {
         console.log("isPriceRising");
         var diff = currentPrice - lastRecords[0][4];
         var lastDiff = currentPrice - lastRecords[process.env.HISTORY_DEPTH - 1][4];
-        var middleDiff = currentPrice - lastRecords[process.env.HISTORY_DEPTH - process.env.RISE_HISTORY_DEPTH][4];
+        var middleDiff = lastRecords[process.env.HISTORY_DEPTH - 1][4] - lastRecords[process.env.HISTORY_DEPTH - process.env.RISE_HISTORY_DEPTH][4];
 
         console.log("currentPrice:" + currentPrice + " lastRecord: " + lastRecords[0][4] + " Rise: " + diff + " lastDiff: " + lastDiff);
         if(diff > 0 && lastDiff > 0 && middleDiff > 0){
@@ -193,7 +193,7 @@ export class CryptoAlgorithm {
         var lastRedisOrder = JSON.parse(redisOrdersString[0]);
         var priceDiff = currentPrice - lastRedisOrder.price;
         var percent = (Math.abs(priceDiff) * 100 ) / lastRedisOrder.price;
-        var lastDiff = currentPrice - lastSymbolPrices[process.env.RISE_HISTORY_DEPTH - 1][4]; // Check if price start to increase after BUY_ON_FAIL_PERCENT fail
+        var lastDiff = lastSymbolPrices[process.env.RISE_HISTORY_DEPTH - 1][4] - lastSymbolPrices[0][4]; // Check if price start to increase after BUY_ON_FAIL_PERCENT fail
         console.log("buyOnPriceFail: " + lastRedisOrder.symbol);
         console.log("percent: " + percent);
         console.log("currentPrice: " + currentPrice);
